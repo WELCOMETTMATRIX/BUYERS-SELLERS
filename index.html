@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Matrix Game: Buyers vs Sellers</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #0d0d0d, #1a1a1a);
+      font-family: 'Orbitron', 'Roboto', system-ui, sans-serif;
+      color: #00ff00;
+      overflow-x: hidden;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 3em;
+      padding: 30px;
+      text-shadow: 0 0 20px #00ff00, 0 0 40px #00ff00;
+      letter-spacing: 2px;
+      animation: glow 3s ease-in-out infinite;
+    }
+
+    @keyframes glow {
+      0%, 100% { text-shadow: 0 0 20px #00ff00, 0 0 40px #00ff00; }
+      50% { text-shadow: 0 0 30px #00ff00, 0 0 60px #00ff00; }
+    }
+
+    .battle-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 20px;
+      gap: 20px;
+    }
+
+    .panel {
+      border: 2px solid #00ff00;
+      padding: 20px;
+      background: rgba(0, 0, 0, 0.85);
+      box-shadow: 0 0 30px rgba(0, 255, 0, 0.3);
+      border-radius: 12px;
+      overflow-y: auto;
+      max-height: 60vh;
+      transition: transform 0.3s;
+    }
+
+    .panel:hover {
+      transform: translateY(-5px);
+    }
+
+    .panel h2 {
+      text-align: center;
+      font-size: 1.8em;
+      border-bottom: 2px solid #00ff00;
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+    }
+
+    .card {
+      border: 1px solid #00ff00;
+      padding: 15px;
+      margin-bottom: 15px;
+      background: rgba(0, 255, 0, 0.15);
+      border-radius: 8px;
+      animation: flicker 2s infinite;
+      opacity: 0;
+      transform: translateY(20px);
+      animation: slideIn 0.5s forwards;
+    }
+
+    @keyframes slideIn {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .buyer .title {
+      color: #00ff00;
+      font-weight: bold;
+    }
+
+    .seller .title {
+      color: #ff4444;
+      font-weight: bold;
+    }
+
+    @keyframes flicker {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.9; }
+    }
+
+    .card .address {
+      font-size: 0.95em;
+      word-break: break-all;
+    }
+
+    .card .amount {
+      font-weight: bold;
+      margin-top: 10px;
+    }
+
+    .season-info {
+      text-align: center;
+      margin: 20px;
+      font-size: 1.3em;
+      text-shadow: 0 0 10px #00ff00;
+    }
+
+    .progress-bar {
+      width: 50%;
+      margin: 10px auto;
+      background: #333;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+
+    .progress {
+      height: 20px;
+      background: #00ff00;
+      transition: width 0.5s;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin: 20px 0;
+      flex-wrap: wrap;
+    }
+
+    .controls button, .controls select {
+      padding: 10px 20px;
+      background: #00ff00;
+      color: #000;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.2s;
+    }
+
+    .controls button:hover, .controls select:hover {
+      background: #00cc00;
+    }
+
+    .leaderboard {
+      max-width: 800px;
+      margin: 20px auto;
+      padding: 20px;
+      background: rgba(0, 0, 0, 0.85);
+      border: 2px solid #00ff00;
+      border-radius: 12px;
+      text-align: center;
+    }
+
+    .leaderboard .card {
+      background: rgba(0, 255, 0, 0.25);
+      position: relative;
+    }
+
+    .leaderboard .card:nth-child(1) .title::before {
+      content: '🥇';
+      margin-right: 10px;
+    }
+
+    .leaderboard .card:nth-child(2) .title::before {
+      content: '🥈';
+      margin-right: 10px;
+    }
+
+    .leaderboard .card:nth-child(3) .title::before {
+      content: '🥉';
+      margin-right: 10px;
+    }
+
+    .loader {
+      display: none;
+      margin: 20px auto;
+      width: 40px;
+      height: 40px;
+      border: 5px solid #00ff00;
+      border-top: 5px solid transparent;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .error-message {
+      text-align: center;
+      color: #ff4444;
+      font-size: 1.2em;
+      margin: 20px;
+    }
+
+    footer {
+      text-align: center;
+      padding: 20px;
+      font-size: 0.9em;
+      color: #00ff00;
+      border-top: 1px solid #00ff00;
+      margin-top: 20px;
+    }
+
+    footer a {
+      color: #00ff00;
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <h1>💹 Matrix Game: Buyers vs Sellers</h1>
+  <div class="season-info">
+    <span>Season 1: Ends <span id="seasonEnd"></span></span>
+    <p>Top Buyer Reward: 10M BLAZZY Tokens</p>
+    <div class="progress-bar">
+      <div class="progress" id="seasonProgress"></div>
+    </div>
+  </div>
+  <div class="controls">
+    <button id="refreshData">Refresh Data</button>
+    <button id="exportCSV">Export as CSV</button>
+    <select id="timeFilter">
+      <option value="all">All Time</option>
+      <option value="24h">Last 24 Hours</option>
+      <option value="7d">Last 7 Days</option>
+    </select>
+  </div>
+  <div class="loader" id="loader"></div>
+  <div class="error-message" id="errorMessage"></div>
+  <div class="battle-container">
+    <div class="panel" id="buyersPanel">
+      <h2>🟢 Top Buyers</h2>
+    </div>
+    <div class="panel" id="sellersPanel">
+      <h2>🔴 Top Sellers</h2>
+    </div>
+  </div>
+  <div class="leaderboard">
+    <h2>Season 1 Leaderboard</h2>
+    <div id="leaderboard"></div>
+  </div>
+  <footer>
+    Matrix Game v1.1 | Powered by <a href="https://cronoscan.com" target="_blank">Cronoscan</a>
+  </footer>
+
+  <script>
+    const API_KEY = '7IWMM9CE4DSN1EA2XTQHFK1MTDAN3DV24T'; // Cronoscan API key
+    const LP_ADDRESS = '0x5f028f49a7443f34aedfc19ed986c92243d98ef5';
+    const SEASON_END = new Date('2025-06-30T23:59:59Z');
+    const CACHE_KEY = 'matrix_game_transfers';
+    const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+    // Fallback data for testing
+    const FALLBACK_DATA = [
+      { from: '0x1234567890abcdef1234567890abcdef12345678', to: LP_ADDRESS, value: '1000000000000000000', tokenDecimal: '18', timeStamp: Math.floor(Date.now() / 1000) },
+      { from: LP_ADDRESS, to: '0xabcdef1234567890abcdef1234567890abcdef12', value: '500000000000000000', tokenDecimal: '18', timeStamp: Math.floor(Date.now() / 1000) },
+    ];
+
+    // Season progress
+    function updateSeasonProgress() {
+      const now = new Date();
+      const total = SEASON_END - new Date('2025-01-01T00:00:00Z');
+      const elapsed = now - new Date('2025-01-01T00:00:00Z');
+      const progress = Math.min((elapsed / total) * 100, 100);
+      document.getElementById('seasonProgress').style.width = `${progress}%`;
+      document.getElementById('seasonEnd').textContent = SEASON_END.toLocaleString();
+    }
+
+    async function fetchTransfers(forceRefresh = false) {
+      const errorMessage = document.getElementById('errorMessage');
+      errorMessage.textContent = '';
+      const cached = localStorage.getItem(CACHE_KEY);
+      const cacheTime = localStorage.getItem(`${CACHE_KEY}_time`);
+      const now = Date.now();
+
+      if (!forceRefresh && cached && cacheTime && now - parseInt(cacheTime) < CACHE_DURATION) {
+        console.log('Using cached data');
+        return JSON.parse(cached);
+      }
+
+      document.getElementById('loader').style.display = 'block';
+      const url = `https://api.cronoscan.com/api?module=account&action=tokentx&address=${LP_ADDRESS}&startblock=0&endblock=99999999&sort=desc&apikey=${API_KEY}`;
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
+        const json = await res.json();
+        console.log('API response:', json);
+        if (json.status !== '1') {
+          throw new Error(json.message || 'API error');
+        }
+        if (!json.result || !Array.isArray(json.result)) {
+          throw new Error('Invalid API response format');
+        }
+        localStorage.setItem(CACHE_KEY, JSON.stringify(json.result));
+        localStorage.setItem(`${CACHE_KEY}_time`, now);
+        return json.result;
+      } catch (err) {
+        console.error('Fetch error:', err);
+        errorMessage.textContent = `Failed to load data: ${err.message}. Using fallback data.`;
+        return FALLBACK_DATA; // Use fallback data if API fails
+      } finally {
+        document.getElementById('loader').style.display = 'none';
+      }
+    }
+
+    function filterTransfers(transfers, timeRange) {
+      const now = Date.now() / 1000;
+      if (timeRange === '24h') {
+        return transfers.filter(tx => now - parseInt(tx.timeStamp) < 24 * 3600);
+      } else if (timeRange === '7d') {
+        return transfers.filter(tx => now - parseInt(tx.timeStamp) < 7 * 24 * 3600);
+      }
+      return transfers;
+    }
+
+    function analyze(transfers, timeRange) {
+      console.log('Analyzing transfers:', transfers.length);
+      const filtered = filterTransfers(transfers, timeRange);
+      const buyers = {};
+      const sellers = {};
+
+      filtered.forEach(tx => {
+        const value = parseFloat(tx.value) / Math.pow(10, parseInt(tx.tokenDecimal || 18));
+        console.log('Processing tx:', { from: tx.from, to: tx.to, value });
+
+        if (tx.to.toLowerCase() === LP_ADDRESS.toLowerCase()) {
+          buyers[tx.from] = (buyers[tx.from] || 0) + value;
+        } else if (tx.from.toLowerCase() === LP_ADDRESS.toLowerCase()) {
+          sellers[tx.to] = (sellers[tx.to] || 0) + value;
+        }
+      });
+
+      const topBuyers = Object.entries(buyers).sort((a, b) => b[1] - a[1]).slice(0, 10);
+      const topSellers = Object.entries(sellers).sort((a, b) => b[1] - a[1]).slice(0, 5);
+      console.log('Top buyers:', topBuyers);
+      console.log('Top sellers:', topSellers);
+
+      updateLeaderboard(topBuyers);
+      return { buyers: topBuyers, sellers: topSellers };
+    }
+
+    function updateLeaderboard(buyers) {
+      const leaderboard = document.getElementById('leaderboard');
+      leaderboard.innerHTML = '<h3>Top Buyers (10M BLAZZY for #1)</h3>';
+      if (buyers.length === 0) {
+        leaderboard.innerHTML += '<p>No buyers yet.</p>';
+        return;
+      }
+
+      buyers.forEach(([address, amount], index) => {
+        const card = document.createElement('div');
+        card.className = 'card buyer';
+        card.style.animationDelay = `${index * 0.1}s`;
+        card.innerHTML = `
+          <div class="title">👤 Buyer #${index + 1}</div>
+          <div class="address">${address.slice(0, 6)}...${address.slice(-4)}</div>
+          <div class="amount">${amount.toFixed(2)} tokens</div>
+        `;
+        leaderboard.appendChild(card);
+      });
+    }
+
+    function renderCards(container, data, type) {
+      console.log(`Rendering ${type}s:`, data);
+      container.innerHTML = `<h2>${type === 'buyer' ? '🟢 Top Buyers' : '🔴 Top Sellers'}</h2>`;
+      if (data.length === 0) {
+        container.innerHTML += `<p>No ${type}s found.</p>`;
+        return;
+      }
+
+      data.forEach(([address, amount], index) => {
+        const card = document.createElement('div');
+        card.className = `card ${type}`;
+        card.style.animationDelay = `${index * 0.1}s`;
+        card.innerHTML = `
+          <div class="title">${type === 'buyer' ? '👤 Buyer' : '💰 Seller'}</div>
+          <div class="address">${address.slice(0, 6)}...${address.slice(-4)}</div>
+          <div class="amount">${amount.toFixed(2)} tokens</div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function exportToCSV(buyers, sellers) {
+      const headers = ['Type,Address,Amount,Season,Timestamp'];
+      const timestamp = new Date().toISOString();
+      const rows = [
+        ...buyers.map(([addr, amt]) => `Buyer,${addr},${amt},Season 1,${timestamp}`),
+        ...sellers.map(([addr, amt]) => `Seller,${addr},${amt},Season 1,${timestamp}`),
+      ];
+      const csv = [headers, ...rows].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `matrix_game_season1_${timestamp}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    async function loadBattle(timeRange = 'all', forceRefresh = false) {
+      try {
+        const transfers = await fetchTransfers(forceRefresh);
+        const { buyers, sellers } = analyze(transfers, timeRange);
+
+        renderCards(document.getElementById('buyersPanel'), buyers, 'buyer');
+        renderCards(document.getElementById('sellersPanel'), sellers, 'seller');
+      } catch (err) {
+        console.error('Load error:', err);
+        document.getElementById('errorMessage').textContent = `Error loading data: ${err.message}`;
+      }
+    }
+
+    // Event listeners
+    document.getElementById('refreshData').onclick = () => loadBattle(document.getElementById('timeFilter').value, true);
+    document.getElementById('exportCSV').onclick = async () => {
+      const transfers = await fetchTransfers();
+      const { buyers, sellers } = analyze(transfers, document.getElementById('timeFilter').value);
+      exportToCSV(buyers, sellers);
+    };
+    document.getElementById('timeFilter').onchange = () => loadBattle(document.getElementById('timeFilter').value);
+
+    // Initial load
+    updateSeasonProgress();
+    loadBattle();
+    setInterval(updateSeasonProgress, 60000); // Update progress every minute
+  </script>
+</body>
+</html>
